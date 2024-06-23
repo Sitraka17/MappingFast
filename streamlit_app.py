@@ -2,6 +2,7 @@ import streamlit as st
 import osmnx as ox
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
+from io import BytesIO
 
 def main():
     st.title("City Map Generator")
@@ -11,6 +12,7 @@ def main():
     road_color = st.color_picker("Choose the color of the roads:", "#0000FF")  # Default is blue
     background_color = st.color_picker("Choose the color of the background:", "#FFA500")  # Default is orange
     map_radius = st.slider("Choose the radius of the map (in meters):", 100, 5000, 1000)
+    export_format = st.selectbox("Select export format:", ["PNG", "JPEG"])
 
     if st.button("Generate Map"):
         with st.spinner("Generating map..."):
@@ -32,10 +34,21 @@ def main():
                 ax.set_yticks([])
                 for spine in ax.spines.values():
                     spine.set_visible(False)
-                
+
                 # Show the map in Streamlit
                 st.pyplot(fig)
-                
+
+                # Export the map
+                if st.button("Export Map"):
+                    st.markdown("### Exported Map")
+                    export_buffer = BytesIO()
+                    if export_format == "PNG":
+                        fig.savefig(export_buffer, format="png")
+                    elif export_format == "JPEG":
+                        fig.savefig(export_buffer, format="jpeg")
+                    export_buffer.seek(0)
+                    st.image(export_buffer, caption=f"Exported map of {city_name}", use_column_width=True)
+
             except Exception as e:
                 st.error(f"An error occurred: {e}")
 
