@@ -8,7 +8,7 @@ def main():
     st.title("City Map Generator")
 
     # Input fields
-    city_name = st.text_input("Enter the name of the city:", "Bordeaux")
+    city_name = st.text_input("Enter the name of the city:", "Rotterdam")
     road_color = st.color_picker("Choose the color of the roads:", "#0000FF")  # Default is blue
     background_color = st.color_picker("Choose the color of the background:", "#FFA500")  # Default is orange
     map_radius = st.slider("Choose the radius of the map (in meters):", 100, 5000, 1000)
@@ -59,7 +59,7 @@ with st.sidebar:
     st.write("I just wanted to make a really simple interface for user to have those simple design maps. Kind of Scandinavian vibes.")
     st.write("ie. simplicity, minimalism and functionality")
     st.write("So...here it is!")
-    st.write(" Enjoy! aka njut av!")
+    st.write(" Enjoy! Njut av!")
     st.markdown(
         """
    <a href='https://ko-fi.com/C0C6YRSIF' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi1.png?v=3' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
