@@ -1,78 +1,43 @@
 import streamlit as st
-from prettymapp.geo import get_aoi
-from prettymapp.osm import get_osm_geometries
-from prettymapp.plotting import Plot
-from prettymapp.settings import STYLES
+import osmnx as ox
 import matplotlib.pyplot as plt
-import io
-import time
+from matplotlib.colors import ListedColormap
 
-# Streamlit app
-st.title("City Map Generator using Prettymapp")
+def main():
+    st.title("City Map Generator")
 
-# Input for the city name and radius
-city_name = st.text_input("Enter the city name or address:", "")
-radius = st.slider("Select the radius (meters):", min_value=100, max_value=5000, value=1000)
+    # Input fields
+    city_name = st.text_input("Enter the name of the city:", "Bordeaux")
+    road_color = st.color_picker("Choose the color of the roads:", "#0000FF")  # Default is blue
+    background_color = st.color_picker("Choose the color of the background:", "#FFA500")  # Default is orange
+    map_radius = st.slider("Choose the radius of the map (in meters):", 100, 5000, 1000)
 
-# Color selection for roads and background
-road_color = st.color_picker("Choose the road color:", "#0000FF")  # Default is blue
-background_color = st.color_picker("Choose the background color:", "#FFFFFF")  # Default is white
+    if st.button("Generate Map"):
+        with st.spinner("Generating map..."):
+            try:
+                # Geocode the city to get the central point
+                geocode_result = ox.geocode(city_name)
+                center_point = (geocode_result[0], geocode_result[1])
 
-@st.cache_data(show_spinner=False)
-def fetch_and_process_data(city_name, radius):
-    # Get the area of interest (AOI) with the specified radius
-    aoi = get_aoi(address=city_name, radius=radius, rectangular=False)
-    
-    # Get OSM geometries within the AOI
-    df = get_osm_geometries(aoi=aoi)
-    
-    return aoi, df
+                # Fetch graph for the specified city
+                G = ox.graph_from_point(center_point, dist=map_radius, retain_all=True, simplify=True, network_type='walk')
+                gdf_nodes, gdf_edges = ox.graph_to_gdfs(G)
 
-if st.button("Make"):
-    if city_name:
-        start_time = time.time()
-        try:
-            # Fetch and process data
-            aoi, df = fetch_and_process_data(city_name, radius)
-            
-            # Define custom style
-            custom_style = {
-                "background": {"color": background_color},
-                "perimeter": {"color": "#000000"},
-                "water": {"color": "#a0c8f0"},
-                "park": {"color": "#c8e6a0"},
-                "industrial": {"color": "#e6e6e6"},
-                "highway": {"color": road_color},
-                "street": {"color": road_color},
-                "path": {"color": road_color},
-            }
-            
-            # Plot the map using the custom style
-            fig = Plot(
-                df=df,
-                aoi_bounds=aoi.bounds,
-                draw_settings=custom_style
-            ).plot_all()
-            
-            # Display the map
-            st.pyplot(fig)
-            
-            # Save the map to an in-memory file
-            buf = io.BytesIO()
-            fig.savefig(buf, format='jpg')
-            buf.seek(0)
-            
-            # Provide a download button for the map
-            st.download_button(
-                label="Download Map",
-                data=buf,
-                file_name=f"{city_name}_map.jpg",
-                mime="image/jpeg"
-            )
-            
-            end_time = time.time()
-            st.write(f"Map generated in {end_time - start_time:.2f} seconds.")
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
-    else:
-        st.warning("Please enter a city name or address.")
+                # Plot the map
+                fig, ax = plt.subplots(figsize=(10, 10))
+                gdf_edges.plot(ax=ax, color=road_color, linewidth=2)
+                ax.set_facecolor(background_color)
+                ax.set_title(f"Map of {city_name}", fontsize=15)
+                ax.set_xticks([])
+                ax.set_yticks([])
+                for spine in ax.spines.values():
+                    spine.set_visible(False)
+                
+                # Show the map in Streamlit
+                st.pyplot(fig)
+                
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+
+if __name__ == "__main__":
+    main()
